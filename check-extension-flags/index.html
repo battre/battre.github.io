@@ -23,7 +23,7 @@ function checkStatus() {
   var newPasswordField = document.getElementById('new-password');
   if (testField && testField.hasAttribute('title') && newPasswordField &&
       newPasswordField.hasAttribute('aria-autocomplete')) {
-    window.opener.postMessage('flags are fine', 'chrome-extension://plaeniloeifmajgdcaonhdnolpfjfhdg');
+    window.opener.postMessage('flags are fine', 'chrome-extension://nbdmflelmbioldmnelpdcgbopohkhaek');
     window.close();
   } else {
     // check again in 200ms.
