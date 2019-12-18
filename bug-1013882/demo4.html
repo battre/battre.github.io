@@ -131,6 +131,7 @@ async function containsString(textarea, string) {
     document.head.appendChild(styleElement);
     await timeout(30);
     result = textarea.scrollWidth > 100;
+    console.log(textarea.scrollWidth);
     return result;
 }
 
