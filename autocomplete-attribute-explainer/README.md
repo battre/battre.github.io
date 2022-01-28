@@ -266,7 +266,7 @@ types than "street name" and "house number". Here is the proposal:
 </tr>
 </table>
 
-*[We would suggest adding something like the following to elaborate:]*
+*We would suggest adding something like the following to elaborate:*
 
 > ### Structured and unstructured street addresses.
 > 
