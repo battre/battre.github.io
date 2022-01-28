@@ -162,126 +162,116 @@ types than "street name" and "house number". Here is the proposal:
 
 <table>
 <tr style="vertical-align: top">
-<th colspan=3>Field name
-<th>Meaning
-<th>Canonical Format
-<th>Canonical Format Example
-<th>Control group
+  <th colspan=3>Field name
+  <th>Meaning
+  <th>Canonical Format
+  <th>Canonical Format Example
+  <th>Control group
 </tr>
-
 <tr style="vertical-align: top">
-<td colspan=3>"street-address"
-<td>Street address (multiple lines, newlines preserved)
-<td>Free-form text
-<td>32 Vassar Street<br>
-    MIT Room 32-G524
-<td>Multiline
+  <td colspan=3>"street-address"
+  <td>Street address (multiple lines, newlines preserved)
+  <td>Free-form text
+  <td>32 Vassar Street<br>
+     MIT Room 32-G524
+  <td>Multiline
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td colspan=2>"address-line1"
-<td rowspan=3>Street address (one line per field)
-<td>Free-form text, no newlines
-<td>32 Vassar Street
-<td>Text
+  <td>
+  <td colspan=2>"address-line1"
+  <td rowspan=3>Street address (one line per field)
+  <td>Free-form text, no newlines
+  <td>32 Vassar Street
+  <td>Text
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td colspan=2>"address-line2"
-<td>Free-form text, no newlines
-<td>MIT Room 32-G524
-<td>Text
+  <td>
+  <td colspan=2>"address-line2"
+  <td>Free-form text, no newlines
+  <td>MIT Room 32-G524
+  <td>Text
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td colspan=2>"address-line3"
-<td>Free-form text, no newlines
-<td>
-<td>Text
+  <td>
+  <td colspan=2>"address-line3"
+  <td>Free-form text, no newlines
+  <td>
+  <td>Text
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td colspan=2>"street-name"
-<td>Name of a street<br><br>(not to be combined with address-lineX)
-<td>Free-form text, no newlines
-<td>Vassar Street
-<td>Text
+  <td>
+  <td colspan=2>"street-name"
+  <td>Name of a street<br><br>(not to be combined with address-lineX)
+  <td>Free-form text, no newlines
+  <td>Vassar Street
+  <td>Text
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td colspan=2>"house-number"
-<td>Predominantly numeric identifier for a house (where applicable)<br><br>(not to be combined with address-lineX)
-<td>Free-form text, no newlines
-<td>32, could contain sub-units: 32-100, 32-a
-<td>Text
+  <td>
+  <td colspan=2>"house-number"
+  <td>Predominantly numeric identifier for a house (where applicable)<br><br>
+    (not to be combined with address-lineX)
+  <td>Free-form text, no newlines
+  <td>32, could contain sub-units: 32-100, 32-a
+  <td>Text
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td colspan=2>"premise" (or “building-name”?)
-<td>Building name (where applicable<br><br>(not to be combined with address-lineX)
-<td>Free-form text, no newlines
-<td>32
-<td>Text
+  <td>
+  <td colspan=2>"premise" (or “building-name”?)
+  <td>Building name (where applicable<br><br>(not to be combined with
+      address-lineX)
+  <td>Free-form text, no newlines
+  <td>32
+  <td>Text
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td colspan=2>"staircase"
-<td>Name of a staircase<br><br>(not to be combined with address-lineX)
-<td>Free-form text, no newlines
-<td>1
-<td>Text
+  <td>
+  <td colspan=2>"staircase"
+  <td>Name of a staircase<br><br>(not to be combined with address-lineX)
+  <td>Free-form text, no newlines
+  <td>1
+  <td>Text
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td colspan=2>"sub-premise" (or “sub-unit”?)
-<td>Identifier of sub-premise (e.g. apartment, room, ...) inside the building.
-    <br>
-    If a sub-premise has only a floor-number and no apartment (or vice versa),
-    this would default to the non-empty value.
-    <br><br>(not to be combined with address-lineX)
-<td>Free-form text, no newlines
-<td>G524
-<td>Text
+  <td>
+  <td colspan=2>"sub-premise" (or “sub-unit”?)
+  <td>Identifier of sub-premise (e.g. apartment, room, ...) inside the building.
+      <br>
+      If a sub-premise has only a floor-number and no apartment (or vice versa),
+      this would default to the non-empty value.
+      <br><br>(not to be combined with address-lineX)
+  <td>Free-form text, no newlines
+  <td>G524
+  <td>Text
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td>
-<td colspan=1>"floor-number"
-<td>Floor number<br><br>(not to be combined with address-lineX)
-<td>Free-form text, no newlines
-<td>G, often times numeric: 4
-<td>Text
+  <td>
+  <td>
+  <td colspan=1>"floor-number"
+  <td>Floor number<br><br>(not to be combined with address-lineX)
+  <td>Free-form text, no newlines
+  <td>G, often times numeric: 4
+  <td>Text
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td>
-<td colspan=1>"apartment"
-<td>Apartment, room or door number<br><br>(not to be combined with address-lineX)
-<td>Free-form text, no newlines
-<td>524
-<td>Text
+  <td>
+  <td>
+  <td colspan=1>"apartment"
+  <td>Apartment, room or door number<br><br>(not to be combined with
+      address-lineX)
+  <td>Free-form text, no newlines
+  <td>524
+  <td>Text
 </tr>
-
 <tr style="vertical-align: top">
-<td>
-<td>
-<td colspan=1>"delivery-instructions"
-<td>Delivery instructions<br><br>(not to be combined with address-lineX)
-<td>Free-form text
-<td>Use gate code: 3315
-<td>Text
+  <td>
+  <td>
+  <td colspan=1>"delivery-instructions"
+  <td>Delivery instructions<br><br>(not to be combined with address-lineX)
+  <td>Free-form text
+  <td>Use gate code: 3315
+  <td>Text
 </tr>
-
 </table>
 
 *[We would suggest adding something like the following to elaborate:]*
