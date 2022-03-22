@@ -1,7 +1,7 @@
 <html>
 <body>
 Drag and drop the following bookmarklet to your bookmark bar:
-<a href="javascript:document.querySelectorAll('variations-dash')[0] .shadowRoot.querySelectorAll('#tab')[0] .querySelector('iron-pages > variations-histograms-tab') .shadowRoot.querySelectorAll('variations-histogram-entry') .forEach((e) => { const style = document.createElement('style'); style.innerHTML = `.title {position: sticky; top: 0; background-color: white;}`; e.shadowRoot.appendChild(style)});">Sticky UMA Titles</a>
+<a href="javascript:document.querySelectorAll('variations-dash').forEach(variations => {    variations.shadowRoot.querySelectorAll('#tab')[0]    .querySelector('iron-pages > variations-histograms-tab')    .shadowRoot.querySelectorAll('variations-histogram-entry')    .forEach((e) => {        const style = document.createElement('style');        style.innerHTML = '.title {position: sticky; top: 0; background-color: white;}';        e.shadowRoot.appendChild(style)});});document.querySelectorAll('histograms-dash').forEach(histograms => { console.log(histograms);    const style = document.createElement('style');    style.innerHTML = 'h2 {position: sticky; top: 0; background-color: white;}';    histograms.appendChild(style)});">Sticky UMA Titles</a>
 
 This gives you sticke titles for the histogram tabs on UMA. <a href="https://screencast.googleplex.com/cast/NjI2NDI0NTAxNzY0MDk2MHw2NzA1MWZhMy0wNA">example video</a>
 </body>
