@@ -1,0 +1,1477 @@
+<html>
+<head>
+  <title>Address printing prototype</title>
+  <!-- https://picocss.com/ -->
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+  <style>
+    /* Tweaks to pico style */
+    @media (min-width: 1200px) {
+      :root {
+          --font-size: 18px;
+      }
+    }
+    @media (min-width: 992px) {
+      :root {
+          --font-size: 18px;
+      }
+    }
+    h1, h2, h3, h4, h5, p, ul {
+      --typography-spacing-vertical: 0.5rem;
+    }
+    h1, h2, h3 {
+      border-bottom: 1px solid #d8dee4;
+    }
+  </style>
+
+  <style>
+    form {
+      border: 1px solid black;
+      padding: 1em;
+      /* max-width: 600px; */
+    }
+    form td:nth-of-type(1) {
+      width: 200px;
+    }
+    input:not([type=checkbox],[type=radio]), select, textarea {
+      margin-bottom: 0;
+    }
+    .instructions {
+      padding: 1em;
+      margin: 1em;
+      max-width: 600px;
+      background: #ffb74a34
+    }
+  </style>
+<script>
+
+function enterDummyData() {
+  document.querySelector('#inputform input[name="NAME"]').value = "Name";
+  document.querySelector('#inputform input[name="APT_AND_BUILDING"]').value = "Apartment and building";
+  document.querySelector('#inputform input[name="STREET_ADDRESS"]').value = "Street address";
+  document.querySelector('#inputform input[name="LANDMARK"]').value = "Landmark";
+  document.querySelector('#inputform input[name="LOCALITY"]').value = "Locality";
+  document.querySelector('#inputform input[name="CITY"]').value = "City";
+  document.querySelector('#inputform input[name="STATE"]').value = "State";
+  document.querySelector('#inputform input[name="PINCODE"]').value = "12345";
+  updateOutputForms();
+}
+
+function extractFromInputForm() {
+  const result = {};
+  for (let field of document.querySelectorAll('#inputform input, #inputform textarea')) {
+    result[field.name] = field.value;
+  }
+  return result;
+}
+
+function updateOutputForm(outputform, data_to_fill) {
+  for (field of form.querySelectorAll('input,textarea')) {
+    let result = "";
+    let token = "";
+    let prefix = "";
+    let suffix = "";
+    const State = {
+      OutsideToken: 'OutsideToken',
+      ParsedDollar: 'ParsedDollar',
+      ParseToken: 'ParseToken',
+      ParsePrefix: 'ParsePrefix',
+      ParseSuffix: 'ParseSuffix',
+    };
+    let state = State.OutsideToken;
+
+    const format_string = field.name;
+    for (let c of format_string) {
+      if ((state === State.ParseToken || state === State.ParsePrefix ||
+            state === State.ParseSuffix) && c === '}') {
+        const lookedup_value = data_to_fill[token];
+        if (lookedup_value !== "") {
+          result = result.concat(prefix, lookedup_value, suffix);
+        }
+        token = "";
+        prefix = "";
+        suffix = "";
+        state = State.OutsideToken;
+      } else if (state === State.OutsideToken) {
+        if (c === '$') {
+          state = State.ParsedDollar;
+        } else {
+          result = result.concat(c);
+        }
+      } else if (state === State.ParsedDollar) {
+        if (c === '{') {
+          state = State.ParseToken;
+        } else {
+          result = "invalid, missing {";
+          break;
+        }
+      } else if (state === State.ParseToken) {
+        if (c === ';') {
+          state = State.ParsePrefix;
+        } else {
+          token = token.concat(c);
+        }
+      } else if (state === State.ParsePrefix) {
+        if (c === ';') {
+          state = State.ParseSuffix;
+        } else {
+          prefix = prefix.concat(c);
+        }
+      } else if (state === State.ParseSuffix) {
+        suffix = suffix.concat(c);
+      }
+    }
+    field.value = result
+  }
+}
+
+function updateOutputForms() {
+  const data_to_fill = extractFromInputForm();
+  for (form of document.querySelectorAll('.output-form')) {
+    updateOutputForm(form, data_to_fill);
+  }
+}
+
+function addInputField(data, target_node) {
+  const split_data = data.split(/\s+\|\s+/, 3);
+  const input_type = split_data[0];
+  const field_type = split_data[1];
+  const label = split_data[2];
+
+  const tr = document.createElement("tr");
+
+  const td1 = document.createElement("td");
+  td1.appendChild(document.createTextNode(`${label}:`));
+  tr.appendChild(td1);
+
+  const td2 = document.createElement("td");
+  if (input_type === "text") {
+    const input = document.createElement("input");
+    input.type = input_type;
+    input.name = field_type;
+    input.oninput = updateOutputForms;
+    td2.append(input);
+  } else if (input_type === "textarea") {
+    const input = document.createElement("textarea");
+    input.name = field_type;
+    input.oninput = updateOutputForms;
+    td2.append(input);
+  }
+  tr.append(td2);
+
+  target_node.appendChild(tr);
+}
+</script>
+</head>
+<body>
+<main class="container-fluid">
+<h1>Input the test address</h1>
+
+<div class="instructions">
+<p>Please enter an address below.</p>
+
+<p>Does the address structure make sense to most people? Would you expect that
+people in some parts of the country struggle to either understand what
+they should enter or would they struggle putting the necessary address data
+into the form (e.g. because some essential field is missing)?</p>
+
+<p>If possible, please try this with multiple addresses (your personal address;
+address in a big city with building blocks and flat numbers; address in a
+smaller city; address with or without a landmark; maybe in different character
+sets if people would fill non-latin characters into address forms on websites?;
+etc).</p>
+</div>
+
+<form>
+  Please enter the input address:
+  <table id="inputform">
+    <script>
+      (() => {
+        const target_node = document.getElementById("inputform");
+        addInputField("text | NAME | Name", target_node);
+      })();
+    </script><script>
+      (() => {
+        const target_node = document.getElementById("inputform");
+        addInputField("text | APT_AND_BUILDING | Flat number and building", target_node);
+      })();
+    </script><script>
+      (() => {
+        const target_node = document.getElementById("inputform");
+        addInputField("text | STREET_ADDRESS | Street", target_node);
+      })();
+    </script><script>
+      (() => {
+        const target_node = document.getElementById("inputform");
+        addInputField("text | LANDMARK | Landmark", target_node);
+      })();
+    </script><script>
+      (() => {
+        const target_node = document.getElementById("inputform");
+        addInputField("text | LOCALITY | Locality", target_node);
+      })();
+    </script><script>
+      (() => {
+        const target_node = document.getElementById("inputform");
+        addInputField("text | CITY | City", target_node);
+      })();
+    </script><script>
+      (() => {
+        const target_node = document.getElementById("inputform");
+        addInputField("text | STATE | State", target_node);
+      })();
+    </script><script>
+      (() => {
+        const target_node = document.getElementById("inputform");
+        addInputField("text | PINCODE | Pincode", target_node);
+      })();
+    </script>
+  </table>
+</form>
+
+<h1>Forms to validate</h1>
+
+<div class="instructions">
+  <p>The following sections show address forms from various websites. For each
+  form I have tried to fill your address according to some rules.</p>
+
+  <p>I'd be interested in whether you believe that the address is entered in a
+  way a human would enter it. If not, how wrong is it? Would a human feel
+  compelled to change the automatically filled address? Would you expect
+  problems with the delivery? Is it a matter of personal preference?</p>
+
+  <p>Please assume that I have very little knowledge about how Indian address forms
+  should be filled. Assume that it's very likely that my add strategies are
+  wrong. Please actively criticize this work.</p>
+
+  <p>Things to look out for:</p>
+  <ul>
+    <li>I have copy&amp;pasted the labels of the input fields. Does the filled
+      data match the labels? Note that many forms have a very similar structure
+      but the labels next to the fields are different.
+    <li>Is the order of items (the order in which a flat number, street name,
+      landmark, etc.) correct in the fields?
+  </ul>
+
+</div>
+
+
+<h2>ajio.com</h2>
+<form>
+<table class="output-form" data-site="ajio.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='ajio.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='ajio.com']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LOCALITY;, } | Locality / Area / Street*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='ajio.com']");
+        addInputField("text | ${LANDMARK} | Landmark", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='ajio.com']");
+        addInputField("text | ${CITY} | District/City*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='ajio.com']");
+        addInputField("text | ${STATE} | State*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='ajio.com']");
+        addInputField("text | ${PINCODE} | Pin Code*", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>adidas.co.in</h2>
+<form>
+<table class="output-form" data-site="adidas.co.in">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='adidas.co.in']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='adidas.co.in']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, } | Street address", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='adidas.co.in']");
+        addInputField("text | ${LANDMARK} | Landmark", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='adidas.co.in']");
+        addInputField("text | ${LOCALITY} | Additional info", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='adidas.co.in']");
+        addInputField("text | ${CITY} | District/City*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='adidas.co.in']");
+        addInputField("text | ${STATE} | State*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='adidas.co.in']");
+        addInputField("text | ${PINCODE} | Pin Code*", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>amazon.com</h2>
+<form>
+<table class="output-form" data-site="amazon.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='amazon.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='amazon.com']");
+        addInputField("textarea | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LANDMARK;, }${LOCALITY;, } | Street address", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='amazon.com']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='amazon.com']");
+        addInputField("text | ${STATE} | State / Province / Region", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='amazon.com']");
+        addInputField("text | ${PINCODE} | Zip Code", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>apollopharmacy.in</h2>
+<form>
+<table class="output-form" data-site="apollopharmacy.in">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='apollopharmacy.in']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='apollopharmacy.in']");
+        addInputField("text | ${APT_AND_BUILDING} | *House no / Apartment name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='apollopharmacy.in']");
+        addInputField("text | ${STREET_ADDRESS}${LOCALITY;, } | *Area Details", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='apollopharmacy.in']");
+        addInputField("text | ${LANDMARK} | Landmark (Optional)", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='apollopharmacy.in']");
+        addInputField("text | ${CITY} | *City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='apollopharmacy.in']");
+        addInputField("text | ${STATE} | *State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='apollopharmacy.in']");
+        addInputField("text | ${PINCODE} | *Pincode", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>bata.in</h2>
+<form>
+<table class="output-form" data-site="bata.in">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='bata.in']");
+        addInputField("text | ${NAME} | Name *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='bata.in']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LANDMARK;, }${LOCALITY;, }  | Address *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='bata.in']");
+        addInputField("text | ${CITY} | City *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='bata.in']");
+        addInputField("text | ${STATE} | State *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='bata.in']");
+        addInputField("text | ${PINCODE} | Pincode *", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>biba.in</h2>
+<form>
+<table class="output-form" data-site="biba.in">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='biba.in']");
+        addInputField("text | ${NAME} | Name *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='biba.in']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LANDMARK;, } | Flat no, Building, Colony*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='biba.in']");
+        addInputField("text | ${LOCALITY} | Locality / Town*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='biba.in']");
+        addInputField("text | ${CITY} | City/District/Town*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='biba.in']");
+        addInputField("text | ${STATE} | State*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='biba.in']");
+        addInputField("text | ${PINCODE} | Pincode*", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>cilory.com</h2>
+<form>
+<table class="output-form" data-site="cilory.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='cilory.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='cilory.com']");
+        addInputField("textarea | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LANDMARK;, }${LOCALITY;, } | Address", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='cilory.com']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='cilory.com']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='cilory.com']");
+        addInputField("text | ${PINCODE} | Pincode", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>croma.com</h2>
+<form>
+<table class="output-form" data-site="croma.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='croma.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='croma.com']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, } | Flat no/Building Name/Society", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='croma.com']");
+        addInputField("text | ${LANDMARK}${LOCALITY;, } | Landmark/Locality/Area", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='croma.com']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='croma.com']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='croma.com']");
+        addInputField("text | ${PINCODE} | Pin code", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>decathlon.in</h2>
+<form>
+<table class="output-form" data-site="decathlon.in">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='decathlon.in']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='decathlon.in']");
+        addInputField("text | ${APT_AND_BUILDING} | House / Flat no / Building / Apartment", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='decathlon.in']");
+        addInputField("text | ${STREET_ADDRESS}${LOCALITY;, } | Street / Locality", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='decathlon.in']");
+        addInputField("text | ${LANDMARK} | Landmark (Optional)", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='decathlon.in']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='decathlon.in']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='decathlon.in']");
+        addInputField("text | ${PINCODE} | Pin code", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>firstcry.com</h2>
+<form>
+<table class="output-form" data-site="firstcry.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='firstcry.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='firstcry.com']");
+        addInputField("text | ${APT_AND_BUILDING} | Flat/House No/Building*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='firstcry.com']");
+        addInputField("text | ${STREET_ADDRESS}${LOCALITY;, } | Area / Locality*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='firstcry.com']");
+        addInputField("text | ${LANDMARK} | Landmark (Optional)", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='firstcry.com']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='firstcry.com']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='firstcry.com']");
+        addInputField("text | ${PINCODE} | Pin code", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>healthkart.com</h2>
+<form>
+<table class="output-form" data-site="healthkart.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='healthkart.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='healthkart.com']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LOCALITY;, } | Address *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='healthkart.com']");
+        addInputField("text | ${LANDMARK} | Landmark", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='healthkart.com']");
+        addInputField("text | ${CITY} | City *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='healthkart.com']");
+        addInputField("text | ${STATE} | State *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='healthkart.com']");
+        addInputField("text | ${PINCODE} | Pin code *", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>hp.com</h2>
+<form>
+<table class="output-form" data-site="hp.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='hp.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='hp.com']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LOCALITY;, } | Street Address *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='hp.com']");
+        addInputField("text | ${LANDMARK} | Landmark", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='hp.com']");
+        addInputField("text | ${CITY} | City *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='hp.com']");
+        addInputField("text | ${STATE} | State *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='hp.com']");
+        addInputField("text | ${PINCODE} | Pin code *", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>igp.com</h2>
+<form>
+<table class="output-form" data-site="igp.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='igp.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='igp.com']");
+        addInputField("text | ${APT_AND_BUILDING} | Address Line - 1 *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='igp.com']");
+        addInputField("text | ${STREET_ADDRESS}${LANDMARK;, }${LOCALITY;, } | Address Line - 2", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='igp.com']");
+        addInputField("text | ${CITY} | City *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='igp.com']");
+        addInputField("text | ${STATE} | State *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='igp.com']");
+        addInputField("text | ${PINCODE} | Pincode/Zipcode *", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>lenskart.com</h2>
+<form>
+<table class="output-form" data-site="lenskart.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='lenskart.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='lenskart.com']");
+        addInputField("text | ${APT_AND_BUILDING} | Address Line 1 (House/Flat Number)*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='lenskart.com']");
+        addInputField("text | ${STREET_ADDRESS}${LANDMARK;, }${LOCALITY;, } | Address Line 2 (Area, Street and Landmark)", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='lenskart.com']");
+        addInputField("text | ${CITY} | City / District *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='lenskart.com']");
+        addInputField("text | ${STATE} | State/Province *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='lenskart.com']");
+        addInputField("text | ${PINCODE} | Zip/Postal Code *", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>maxbhi.com</h2>
+<form>
+<table class="output-form" data-site="maxbhi.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxbhi.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxbhi.com']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LOCALITY;, } | Address *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxbhi.com']");
+        addInputField("text | ${LANDMARK} | Landmark", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxbhi.com']");
+        addInputField("text | ${CITY} | City *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxbhi.com']");
+        addInputField("text | ${STATE} | State *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxbhi.com']");
+        addInputField("text | ${PINCODE} | Pin code *", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>maxfashion.in</h2>
+<form>
+<table class="output-form" data-site="maxfashion.in">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxfashion.in']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxfashion.in']");
+        addInputField("text | ${APT_AND_BUILDING} | Building name or number", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxfashion.in']");
+        addInputField("text | ${STREET_ADDRESS}${LOCALITY;, } | Street name or number", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxfashion.in']");
+        addInputField("text | ${LANDMARK} | Landmark (optional)", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxfashion.in']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxfashion.in']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='maxfashion.in']");
+        addInputField("text | ${PINCODE} | Pincode", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>pharmeasy.in</h2>
+<form>
+<table class="output-form" data-site="pharmeasy.in">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='pharmeasy.in']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='pharmeasy.in']");
+        addInputField("text | ${APT_AND_BUILDING} | Building Name and Flat Number*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='pharmeasy.in']");
+        addInputField("text | ${STREET_ADDRESS}${LANDMARK;, }${LOCALITY;, } | Street Name*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='pharmeasy.in']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='pharmeasy.in']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='pharmeasy.in']");
+        addInputField("text | ${PINCODE} | Pincode", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>mirraw.com</h2>
+<form>
+<table class="output-form" data-site="mirraw.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='mirraw.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='mirraw.com']");
+        addInputField("text | ${APT_AND_BUILDING} | Address Line 1", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='mirraw.com']");
+        addInputField("text | ${STREET_ADDRESS}${LANDMARK;, }${LOCALITY;, } | Address Line 2", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='mirraw.com']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='mirraw.com']");
+        addInputField("text | ${STATE} | State / Province", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='mirraw.com']");
+        addInputField("text | ${PINCODE} | Pincode / Zip / Postal Code", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>muscleblaze.com</h2>
+<form>
+<table class="output-form" data-site="muscleblaze.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='muscleblaze.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='muscleblaze.com']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LANDMARK;, } | Address (House No, Building, Street Area)", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='muscleblaze.com']");
+        addInputField("text | ${LOCALITY} | Locality/Town", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='muscleblaze.com']");
+        addInputField("text | ${CITY} | City/District", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='muscleblaze.com']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='muscleblaze.com']");
+        addInputField("text | ${PINCODE} | Pincode", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>netmeds.com</h2>
+<form>
+<table class="output-form" data-site="netmeds.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='netmeds.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='netmeds.com']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LOCALITY;, } | Address", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='netmeds.com']");
+        addInputField("text | ${LANDMARK} | Landmark", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='netmeds.com']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='netmeds.com']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='netmeds.com']");
+        addInputField("text | ${PINCODE} | Pincode", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>nike.com</h2>
+<form>
+<table class="output-form" data-site="nike.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nike.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nike.com']");
+        addInputField("text | ${APT_AND_BUILDING} | Address Line 1", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nike.com']");
+        addInputField("text | ${STREET_ADDRESS}${LANDMARK;, }${LOCALITY;, } | Address Line 2", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nike.com']");
+        addInputField("text | - | Address Line 3", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nike.com']");
+        addInputField("text | ${CITY} | Locality", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nike.com']");
+        addInputField("text | ${STATE} | State / Territory", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nike.com']");
+        addInputField("text | ${PINCODE} | Postal Code", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>nnnow.com</h2>
+<form>
+<table class="output-form" data-site="nnnow.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nnnow.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nnnow.com']");
+        addInputField("textarea | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LOCALITY;, } | Street address", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nnnow.com']");
+        addInputField("text | ${LANDMARK} | Landmark", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nnnow.com']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nnnow.com']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nnnow.com']");
+        addInputField("text | ${PINCODE} | Pincode", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>nykaa.com</h2>
+<form>
+<table class="output-form" data-site="nykaa.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nykaa.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nykaa.com']");
+        addInputField("textarea | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LANDMARK;, }${LOCALITY;, } | Street address", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nykaa.com']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nykaa.com']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='nykaa.com']");
+        addInputField("text | ${PINCODE} | Pincode", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>patanjaliayurved.net, purplle.com</h2>
+<form>
+<table class="output-form" data-site="patanjaliayurved.net, purplle.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='patanjaliayurved.net, purplle.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='patanjaliayurved.net, purplle.com']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LOCALITY;, } | Default Address", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='patanjaliayurved.net, purplle.com']");
+        addInputField("text | ${LANDMARK} | Landmark", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='patanjaliayurved.net, purplle.com']");
+        addInputField("text | ${CITY} | City", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='patanjaliayurved.net, purplle.com']");
+        addInputField("text | ${STATE} | State", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='patanjaliayurved.net, purplle.com']");
+        addInputField("text | ${PINCODE} | Pincode", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>reliancedigital.in</h2>
+<form>
+<table class="output-form" data-site="reliancedigital.in">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='reliancedigital.in']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='reliancedigital.in']");
+        addInputField("text | ${APT_AND_BUILDING} | Enter Flat / House No / Floor / Building Name*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='reliancedigital.in']");
+        addInputField("text | ${STREET_ADDRESS}${LOCALITY;, } | Enter Colony / Street*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='reliancedigital.in']");
+        addInputField("text | ${LANDMARK} | Enter Landmark*", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='reliancedigital.in']");
+        addInputField("text | ${CITY} | City *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='reliancedigital.in']");
+        addInputField("text | ${STATE} | State *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='reliancedigital.in']");
+        addInputField("text | ${PINCODE} | Pincode/Zipcode *", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>shoppersstop.com</h2>
+<form>
+<table class="output-form" data-site="shoppersstop.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='shoppersstop.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='shoppersstop.com']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LOCALITY;, } | Address (House No, Building)", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='shoppersstop.com']");
+        addInputField("text | ${LANDMARK} | Enter Landmark", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='shoppersstop.com']");
+        addInputField("text | ${CITY} | City *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='shoppersstop.com']");
+        addInputField("text | ${STATE} | State *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='shoppersstop.com']");
+        addInputField("text | ${PINCODE} | Enter PinCode *", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>tatacliq.com</h2>
+<form>
+<table class="output-form" data-site="tatacliq.com">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='tatacliq.com']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='tatacliq.com']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LOCALITY;, } | Address (Required)", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='tatacliq.com']");
+        addInputField("text | ${LANDMARK} | Landmark", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='tatacliq.com']");
+        addInputField("text | ${CITY} | City/district (Required)", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='tatacliq.com']");
+        addInputField("text | ${STATE} | State (Required)", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='tatacliq.com']");
+        addInputField("text | ${PINCODE} | Enter your PIN code (Required) *", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+<h2>titan.co.in</h2>
+<form>
+<table class="output-form" data-site="titan.co.in">
+  <script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='titan.co.in']");
+        addInputField("text | ${NAME} | Name", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='titan.co.in']");
+        addInputField("text | ${APT_AND_BUILDING}${STREET_ADDRESS;, }${LANDMARK;, }${LOCALITY;, } | Street address / building / locality", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='titan.co.in']");
+        addInputField("text | ${CITY} | City *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='titan.co.in']");
+        addInputField("text | ${STATE} | State *", target_node);
+      })();
+  </script><script>
+      (() => {
+        const target_node = document.querySelector(
+            ".output-form[data-site='titan.co.in']");
+        addInputField("text | ${PINCODE} | PIN-Code/ZIP-Code *", target_node);
+      })();
+  </script>
+</table>
+</form>
+
+
+<script>/*enterDummyData();*/</script>
+</body>
+</html>
