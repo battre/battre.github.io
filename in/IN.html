@@ -85,6 +85,9 @@ function updateOutputForm(outputform, data_to_fill) {
             state === State.ParseSuffix) && c === '}') {
         const lookedup_value = data_to_fill[token];
         if (lookedup_value !== "") {
+          if (result.length == 0) {
+            prefix = "";
+          }
           result = result.concat(prefix, lookedup_value, suffix);
         }
         token = "";
