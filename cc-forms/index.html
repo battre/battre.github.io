@@ -29,6 +29,24 @@
 		<button type=submit>submit</button>
 	</form>
 	<hr>
+	<h1>MM, YY inputs, with maxlength</h1>
+	<form action="/foo" method="post">
+		Name: <input name="cc-name"><br>
+		Number: <input name="cc-number"><br>
+		Expiration date: <input name="cc-exp-month" maxlength=2>/<input name="cc-exp-year" maxlength=2><br>
+		CVC: <input name="cc-cvc"><br>
+		<button type=submit>submit</button>
+	</form>
+	<hr>
+	<h1>MM, YYYY inputs, with maxlength</h1>
+	<form action="/foo" method="post">
+		Name: <input name="cc-name"><br>
+		Number: <input name="cc-number"><br>
+		Expiration date: <input name="cc-exp-month" maxlength=2>/<input name="cc-exp-year" maxlength=4><br>
+		CVC: <input name="cc-cvc"><br>
+		<button type=submit>submit</button>
+	</form>
+	<hr>
 	<h1>MMYY input, with placeholder</h1>
 	<form action="/foo" method="post">
 		Name: <input name="cc-name"><br>
